@@ -23,12 +23,15 @@ def clean_text(text):
 # -------------------
 # Streamlit UI
 # -------------------
-st.title("Simple Sentiment Analysis")
+st.title("Binary Sentiment Analysis (Positive / Negative)")
 
 uploaded_file = st.file_uploader("Upload your CSV file with 'review_text' and 'sentiment'", type="csv")
 
 if uploaded_file:
     data = pd.read_csv(uploaded_file)
+
+    # Keep only positive and negative reviews
+    data = data[data['sentiment'].isin(['positive', 'negative'])]
 
     # Clean the reviews
     data['cleaned_review'] = data['review_text'].apply(clean_text)
