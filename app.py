@@ -8,6 +8,7 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from scipy.sparse import hstack
+import numpy as np
 
 nltk.download('stopwords')
 
@@ -48,11 +49,12 @@ if uploaded_file:
 
     # Structured features
     structured_features = data[['gender','age_group','region','product_category','customer_rating']]
-    encoder = OneHotEncoder()
+    encoder = OneHotEncoder(handle_unknown="ignore")  # ✅ fix here
     X_structured = encoder.fit_transform(structured_features)
 
     # Combine features
     X = hstack([X_text, X_structured])
+
     if le:
         y = data['sentiment_label']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -61,24 +63,3 @@ if uploaded_file:
         st.success("Model trained on uploaded data!")
     else:
         model = LogisticRegression(max_iter=500)
-        # If no sentiment, we just train on entire X (optional)
-        st.warning("No 'sentiment' column found. Predictions will not be validated.")
-
-    # -------------------
-    # Predict new reviews
-    # -------------------
-    st.subheader("Predict sentiment for new reviews")
-    new_review = st.text_area("Enter a customer review")
-    if st.button("Predict Sentiment") and new_review:
-        cleaned = clean_text(new_review)
-        X_new_text = tfidf.transform([cleaned])
-        # Use default values for structured features
-        import numpy as np
-        default_structured = np.array([['male','18-30','north','books',5]])
-        X_new_structured = encoder.transform(default_structured)
-        X_new = hstack([X_new_text, X_new_structured])
-        pred_label = model.predict(X_new)
-        if le:
-            st.write("Predicted Sentiment:", le.inverse_transform(pred_label)[0])
-        else:
-            st.write("Predicted Sentiment (numeric):", pred_label[0])
