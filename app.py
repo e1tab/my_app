@@ -14,16 +14,19 @@ nltk.download('stopwords')
 # Helper function
 # -------------------
 def clean_text(text):
-    text = text.lower()
+    text = str(text).lower()
     text = re.sub(r'[^a-z\s]', '', text)
     stop_words = set(stopwords.words('english'))
+    # Keep sentiment words in case they are in stopwords
+    sentiment_words = ['like','love','hate','dislike','good','bad']
+    stop_words = stop_words - set(sentiment_words)
     text = ' '.join(word for word in text.split() if word not in stop_words)
     return text
 
 # -------------------
 # Streamlit UI
 # -------------------
-st.title("Binary Sentiment Analysis (Positive / Negative)")
+st.title("Machine Learning Sentiment Analysis (Binary)")
 
 uploaded_file = st.file_uploader("Upload your CSV file with 'review_text' and 'sentiment'", type="csv")
 
@@ -31,7 +34,7 @@ if uploaded_file:
     data = pd.read_csv(uploaded_file)
 
     # Keep only positive and negative reviews
-    data = data[data['sentiment'].isin(['positive', 'negative'])]
+    data = data[data['sentiment'].isin(['positive','negative'])]
 
     # Clean the reviews
     data['cleaned_review'] = data['review_text'].apply(clean_text)
