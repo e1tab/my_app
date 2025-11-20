@@ -30,8 +30,6 @@ st.title("Customer Sentiment Analysis")
 uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
 if uploaded_file:
     data = pd.read_csv(uploaded_file)
-    st.write("Preview of your data:")
-    st.dataframe(data.head())
 
     # Clean reviews
     data['cleaned_review'] = data['review_text'].apply(clean_text)
@@ -49,7 +47,7 @@ if uploaded_file:
 
     # Structured features
     structured_features = data[['gender','age_group','region','product_category','customer_rating']]
-    encoder = OneHotEncoder(handle_unknown="ignore")  # ✅ fix here
+    encoder = OneHotEncoder(handle_unknown="ignore")  # avoids crash on unseen categories
     X_structured = encoder.fit_transform(structured_features)
 
     # Combine features
@@ -63,3 +61,27 @@ if uploaded_file:
         st.success("Model trained on uploaded data!")
     else:
         model = LogisticRegression(max_iter=500)
+        st.warning("No 'sentiment' column found. Predictions will not be validated.")
+        model.fit(X, np.zeros(X.shape[0]))  # dummy fit
+
+    # -------------------
+    # Predict new reviews
+    # -------------------
+    st.subheader("Predict sentiment for new reviews")
+    new_review = st.text_area("Enter a customer review")
+    
+    if st.button("Predict Sentiment") and new_review:
+        cleaned = clean_text(new_review)
+        X_new_text = tfidf.transform([cleaned])
+
+        # Default structured features (must exist in training data)
+        default_structured = np.array([['male','46-60','north','books',5]])
+        X_new_structured = encoder.transform(default_structured)
+
+        X_new = hstack([X_new_text, X_new_structured])
+        pred_label = model.predict(X_new)
+
+        if le:
+            st.write("Predicted Sentiment:", le.inverse_transform(pred_label)[0])
+        else:
+            st.write("Predicted Sentiment (numeric):", pred_label[0])
